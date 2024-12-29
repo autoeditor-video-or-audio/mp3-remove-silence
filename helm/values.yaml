@@ -1,4 +1,4 @@
-app: mp3-to-mp4-editor
+app: mp3-remove-silence
 component: autoeditor-video-or-audio
 core: autoeditor
 version: 1.0.3

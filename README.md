@@ -1,11 +1,11 @@
-# MP3 to MP4 Editor
+# MP3 Remove Silence
 
-Este projeto automatiza a conversão de arquivos MP3 em vídeos MP4 com tela branca, permitindo a edição automática de vídeos para remoção de silêncios. Após a edição, os arquivos são armazenados e organizados em buckets no MinIO, proporcionando uma solução prática e eficiente para gerenciamento e edição de mídia.
+Este projeto automatiza a remoção de silêncios em arquivos MP3, permitindo a edição eficiente e o gerenciamento de mídia. Após a edição, os arquivos são armazenados e organizados em buckets no MinIO, proporcionando uma solução prática e otimizada.
 
 ## Funcionalidades principais:
 
-- **Conversão MP3 para MP4**: Transforma arquivos MP3 em vídeos MP4 com uma tela branca de fundo.
-- **Edição automática**: Remove silêncios dos vídeos gerados, otimizando o conteúdo.
+- **Edição automática de MP3**: Remove silêncios dos arquivos MP3, otimizando o conteúdo de áudio.
+- **Conversão opcional para MP4**: Transforma arquivos MP3 em vídeos MP4 com uma tela branca de fundo, se necessário.
 - **Reconversão MP4 para MP3**: Após a edição, reconverte os vídeos MP4 de volta para o formato MP3.
 - **Integração com MinIO**: Realiza upload automatizado dos arquivos processados e organiza-os em buckets MinIO.
 - **Gerenciamento de arquivos temporários**: Remove automaticamente arquivos temporários para economizar espaço.
@@ -15,7 +15,7 @@ Este projeto automatiza a conversão de arquivos MP3 em vídeos MP4 com tela bra
 - **Python**: Linguagem principal utilizada no projeto.
 - **MinIO SDK**: Para integração e gerenciamento de buckets.
 - **MoviePy**: Biblioteca para manipulação de áudio e vídeo.
-- **Auto-Editor**: Ferramenta para edição de vídeos com remoção de silêncios.
+- **Auto-Editor**: Ferramenta para edição de arquivos com remoção de silêncios.
 - **Subprocess**: Para executar comandos externos durante o processo.
 
 ## Como executar:

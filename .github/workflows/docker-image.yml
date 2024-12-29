@@ -39,8 +39,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mp3-to-mp4-editor:latest
-            ghcr.io/${{ github.repository_owner }}/mp3-to-mp4-editor:1.0.${{ github.run_number }}
+            ghcr.io/${{ github.repository_owner }}/mp3-remove-silence:latest
+            ghcr.io/${{ github.repository_owner }}/mp3-remove-silence:1.0.${{ github.run_number }}
 
       - name: Log out of GitHub Container Registry
         run: docker logout ghcr.io
