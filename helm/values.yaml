@@ -1,7 +1,7 @@
 app: mp3-to-mp4-editor
 component: autoeditor-video-or-audio
 core: autoeditor
-version: 1.0.1
+version: 1.0.2
 
 cronjob:
   schedule: "* * * * *"
