@@ -41,7 +41,7 @@ def download_mp3_from_bucket(client, bucket_name):
         logger.debug(green(f"Download: {obj.object_name}"))
         if verificar_extensao_arquivo_mp3(obj.object_name):
             local_filename = obj.object_name.replace('\\', '/').split('/')[-1]
-            client.fget_object(bucket_name, obj.object_name, f"/opt/app/foredit/{local_filename}")
+            client.fget_object(bucket_name, obj.object_name, f"/app/foredit/{local_filename}")
             logger.debug(green(f"{local_filename} Download realizado com sucesso."))
             return local_filename
     return None
@@ -51,10 +51,10 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     nameProcessedFileMp4 = nameProcessedFile[:-4] + ".mp4"
 
     # Converte MP3 para MP4
-    converter_mp3_para_mp4(f"/opt/app/foredit/{nameProcessedFile}", f"/opt/app/foredit/{nameProcessedFileMp4}")
+    converter_mp3_para_mp4(f"/app/foredit/{nameProcessedFile}", f"/app/foredit/{nameProcessedFileMp4}")
 
     # Cria diretório para arquivos editados
-    pathDirFilesEdited = "/opt/app/edited/"
+    pathDirFilesEdited = "/app/edited/"
     create_directory(pathDirFilesEdited)
 
     # Edita o vídeo para remover silêncios
@@ -73,11 +73,11 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
 
     # Faz upload do arquivo processado para o bucket
     postFileInBucket(client, bucketSet, f"processing/step2/{currentAction}/{nameProcessedFile}", f"{pathDirFilesEdited}{nameProcessedFile}", 'audio/mpeg')
-    postFileInBucket(client, bucketSet, f"processing/step1/{currentAction}/Original-{nameProcessedFile}", f"/opt/app/foredit/{nameProcessedFile}", 'audio/mpeg')
+    # postFileInBucket(client, bucketSet, f"processing/step1/{currentAction}/Original-{nameProcessedFile}", f"/app/foredit/{nameProcessedFile}", 'audio/mpeg')
 
     # Remove diretórios temporários
     shutil.rmtree(pathDirFilesEdited)
-    shutil.rmtree("/opt/app/foredit/")
+    shutil.rmtree("/app/foredit/")
 
     # Remove o arquivo original do bucket
     client.remove_object(bucketSet, f"foredit/{nameProcessedFile}")
