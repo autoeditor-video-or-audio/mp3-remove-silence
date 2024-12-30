@@ -32,7 +32,7 @@ cronjob:
   resources:
     limits:
       memory: "6Gi"
-      cpu: "4.0"
+      cpu: "2.0"
   affinity:
     hosts:
       - name: k8s-03
