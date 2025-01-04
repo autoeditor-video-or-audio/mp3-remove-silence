@@ -5,3 +5,4 @@ numpy==1.24
 auto-editor
 minio
 requests
+pika==1.3.2

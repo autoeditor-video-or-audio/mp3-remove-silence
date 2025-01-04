@@ -6,9 +6,8 @@ from minio.error import S3Error
 from utils import green, logger
 import moviepy.editor as mp
 from datetime import datetime
-
-current_datetime = datetime.now()
-currentAction = current_datetime.strftime("%d-%m-%Y--%H-%M-%S")
+import pika
+import json
 
 # Inicializa o cliente MinIO com variáveis de ambiente
 def initialize_minio_client():
@@ -23,6 +22,38 @@ def initialize_minio_client():
         secret_key=MINIO_ROOT_PASSWORD,
         secure=False,
     )
+
+# Inicializa a conexão com o RabbitMQ
+def initialize_rabbitmq_connection():
+    rabbitmq_host = os.getenv('RABBITMQ_HOST', '')
+    rabbitmq_port = int(os.getenv('RABBITMQ_PORT', 5672))
+    rabbitmq_vhost = os.getenv('RABBITMQ_VHOST', '/')
+    rabbitmq_user = os.getenv('RABBITMQ_USER', '')
+    rabbitmq_pass = os.getenv('RABBITMQ_PASS', '')
+
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+    return pika.BlockingConnection(pika.ConnectionParameters(
+        host=rabbitmq_host,
+        port=rabbitmq_port,
+        virtual_host=rabbitmq_vhost,
+        credentials=credentials
+    ))
+
+# Publica mensagem na fila do RabbitMQ
+def publish_to_rabbitmq(queue_name, message):
+    connection = initialize_rabbitmq_connection()
+    channel = connection.channel()
+    channel.queue_declare(queue=queue_name, durable=True)
+    channel.basic_publish(
+        exchange='',
+        routing_key=queue_name,
+        body=json.dumps(message),
+        properties=pika.BasicProperties(
+            delivery_mode=2,  # Persistente
+        )
+    )
+    logger.debug(green(f"Mensagem publicada na fila {queue_name}: {message}"))
+    connection.close()
 
 # Verifica se o arquivo tem extensão .mp3
 def verificar_extensao_arquivo_mp3(caminho_arquivo):
@@ -85,6 +116,15 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     # Faz upload do arquivo processado para o bucket
     postFileInBucket(client, bucketSet, f"files-without-silence/{nameProcessedFile}", f"{pathDirFilesEdited}{nameProcessedFile}", 'audio/mpeg')
 
+    # Publica na fila do RabbitMQ
+    file_info = {
+        "file_format": "mp3",
+        "file_name": nameProcessedFile,
+        "bucket_path": f"files-without-silence/{nameProcessedFile}",
+        "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    publish_to_rabbitmq("01_mp3_to_video", file_info)
+
     # Remove os diretórios temporários usados para edição
     shutil.rmtree(pathDirFilesEdited)
     shutil.rmtree("/app/foredit/")
@@ -98,7 +138,7 @@ def main():
     bucketSet = "autoeditor"
     client = initialize_minio_client()
 
-    logger.debug(green(f'...START -> {currentAction}'))
+    logger.debug(green(f'...START -> {datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}'))
 
     # Tenta baixar o primeiro arquivo MP3 do bucket
     nameProcessedFile = download_mp3_from_bucket(client, bucketSet)
