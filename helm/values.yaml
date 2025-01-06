@@ -54,7 +54,7 @@ deployment:
       memory: "256Mi"
       cpu: "500m"
     limits:
-      memory: "2Gi"
+      memory: "512Mi"
       cpu: "1.0"
   affinity:
     hosts:
