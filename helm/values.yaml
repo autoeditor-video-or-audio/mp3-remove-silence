@@ -3,11 +3,14 @@ component: autoeditor-video-or-audio
 core: autoeditor
 version: 1.0.6
 
-cronjob:
-  schedule: "* * * * *"
+deployment:
+  replicas: 1
+  sendlogs: "true"
   env:
     - name: "TZ"
       value: "America/Sao_Paulo"
+    - name: TIME_SLEEP
+      value: "3"
     #auto-editor
     - name: AUTO_EDITOR_MARGIN
       value: "0.25sec,0.25sec"
@@ -47,15 +50,13 @@ cronjob:
     - exec: "python"
     - exec: "main.py"
   resources:
+    requests:
+      memory: "256Mi"
+      cpu: "500m"
     limits:
-      memory: "4Gi"
-      cpu: "2.0"
+      memory: "2Gi"
+      cpu: "1.0"
   affinity:
     hosts:
       - name: k8s-03
       - name: k8s-04
-  restartPolicy: OnFailure
-  ttlSecondsAfterFinished: 7200
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 2

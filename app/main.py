@@ -1,4 +1,5 @@
 import os
+import time
 import subprocess
 import shutil
 from minio import Minio
@@ -85,9 +86,9 @@ def postFileInBucket(client, bucket_name, path_dest, path_src, content_type=None
 def download_mp3_from_bucket(client, bucket_name):
     objects = client.list_objects(bucket_name, prefix="", recursive=False)
     for obj in objects:
-        logger.debug(green(f"Download: {obj.object_name}"))
         if verificar_extensao_arquivo_mp3(obj.object_name) and '/' not in obj.object_name:
             local_filename = obj.object_name.replace('\\', '/').split('/')[-1]
+            logger.debug(green(f"Download: {obj.object_name}/{local_filename}"))
             client.fget_object(bucket_name, obj.object_name, f"/app/foredit/{local_filename}")
             logger.debug(green(f"{local_filename} Download realizado com sucesso."))
             return local_filename
@@ -109,7 +110,6 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     ])
     logger.debug(green(f"Editado: {nameProcessedFile}"))
 
-    # Reconverte MP4 para MP3
     clip = mp.AudioFileClip(f"{pathDirFilesEdited}WithoutSilence-{nameProcessedFile}")
     clip.write_audiofile(f"{pathDirFilesEdited}{nameProcessedFile}")
 
@@ -133,26 +133,23 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     client.remove_object(bucketSet, f"{nameProcessedFile}")
     logger.debug(green(f"Arquivo original removido do bucket: {nameProcessedFile}"))
 
-# Função principal
-def main():
+# Loop contínuo para monitorar a pasta no MinIO
+def monitor_and_process():
+    TIME_SLEEP = int(os.getenv('TIME_SLEEP', 3))
+
     bucketSet = "autoeditor"
     client = initialize_minio_client()
+    logger.debug(green(f'Monitorando bucket {bucketSet} - {datetime.now()}'))
 
-    logger.debug(green(f'...START -> {datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}'))
-
-    # Tenta baixar o primeiro arquivo MP3 do bucket
-    nameProcessedFile = download_mp3_from_bucket(client, bucketSet)
-
-    if nameProcessedFile:
-        # Processa o arquivo se encontrado
-        process_audio_video(nameProcessedFile, client, bucketSet)
-    else:
-        logger.debug(green(f"Nenhum arquivo MP3 encontrado no bucket {bucketSet}"))
-
-    logger.debug(green('...FINISHED...'))
+    while True:
+        try:
+            nameProcessedFile = download_mp3_from_bucket(client, bucketSet)
+            if nameProcessedFile:
+                process_audio_video(nameProcessedFile, client, bucketSet)
+            
+        except S3Error as exc:
+            logger.debug(green("Erro ocorrido: ", exc))
+        time.sleep(TIME_SLEEP)  # Aguarda 3 segundos antes de verificar novamente
 
 if __name__ == "__main__":
-    try:
-        main()
-    except S3Error as exc:
-        logger.debug(green("Erro ocorrido: ", exc))
+    monitor_and_process()
