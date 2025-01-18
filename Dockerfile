@@ -16,3 +16,5 @@ COPY ./app/ .
 
 # ENTRYPOINT ["bash"]
 # ENTRYPOINT ["python3", "run.py"]
+
+# docker rm -f pod && docker run -ti --name pod -v ./app:/app/ --env-file env.list mrs bash
