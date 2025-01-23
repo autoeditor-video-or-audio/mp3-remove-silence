@@ -29,6 +29,23 @@ deployment:
         secretKeyRef:
           name: s-minio
           key: MINIO_SECRET_KEY
+    # api transcribe
+    - name: API_TRANSCRIBE_URL
+      value: "svc-whisper-stt-api.whisper.svc.cluster.local" #"192.168.15.4"
+    - name: API_TRANSCRIBE_PORT
+      value: "80" #"9000"
+    - name: API_TRANSCRIBE_TIMEOUT
+      value: "1200"
+    # categorias
+    - name: CATEGORIES
+      valeue: "food,comedy,gamer,religion"
+    # ollama
+    - name: OLLAMA_HOSTNAME
+      value: "192.168.15.4"
+    - name: OLLAMA_PORT
+      value: "11434"
+    - name: OLLAMA_MODEL
+      value: "gemma2:9b"
     # rabbitmq
     - name: RABBITMQ_HOST
       value: "svc-rabbitmq.rabbitmq.svc.cluster.local"

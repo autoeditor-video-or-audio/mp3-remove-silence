@@ -1,14 +1,22 @@
 import os
 import time
+import logging
 import subprocess
 import shutil
 from minio import Minio
 from minio.error import S3Error
-from utils import green, logger
 import moviepy.editor as mp
 from datetime import datetime
 import pika
 import json
+from libs.transcription_utils import transcribe_audio_whisper, classify_transcription, get_categories_from_env
+
+# Configuração do logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Disable pika debug logs, setting them to WARNING or higher
+logging.getLogger("pika").setLevel(logging.WARNING)
 
 # Inicializa o cliente MinIO com variáveis de ambiente
 def initialize_minio_client():
@@ -53,7 +61,7 @@ def publish_to_rabbitmq(queue_name, message):
             delivery_mode=2,  # Persistente
         )
     )
-    logger.debug(green(f"Mensagem publicada na fila {queue_name}: {message}"))
+    logger.info(f"Mensagem publicada na fila {queue_name}: {message}")
     connection.close()
 
 # Verifica se o arquivo tem extensão .mp3
@@ -65,22 +73,22 @@ def verificar_extensao_arquivo_mp3(caminho_arquivo):
 def create_directory(path):
     try:
         os.makedirs(path)
-        logger.debug(green(f"Diretório {path} criado com sucesso!"))
+        logger.info(f"Diretório {path} criado com sucesso!")
     except FileExistsError:
-        logger.debug(green(f"Diretório {path} já existe."))
+        logger.info(f"Diretório {path} já existe.")
 
 # Faz upload de arquivos para o bucket
 def postFileInBucket(client, bucket_name, path_dest, path_src, content_type=None):
     if path_src.endswith('.txt'):
         content_type = 'text/plain'
-    logger.debug(green(f"Fazendo upload no bucket {bucket_name}, arquivo {path_dest}"))
+    logger.info(f"Fazendo upload no bucket {bucket_name}, arquivo {path_dest}")
     client.fput_object(
         bucket_name,
         path_dest,
         path_src,
         content_type=content_type
     )
-    logger.debug(green(f"Upload do arquivo {path_src} realizado com sucesso."))
+    logger.info(f"Upload do arquivo {path_src} realizado com sucesso.")
 
 # Baixa o primeiro arquivo MP3 encontrado apenas na raiz do bucket
 def download_mp3_from_bucket(client, bucket_name):
@@ -88,43 +96,70 @@ def download_mp3_from_bucket(client, bucket_name):
     for obj in objects:
         if verificar_extensao_arquivo_mp3(obj.object_name) and '/' not in obj.object_name:
             local_filename = obj.object_name.replace('\\', '/').split('/')[-1]
-            logger.debug(green(f"Download: {obj.object_name}/{local_filename}"))
+            logger.info(f"Download: {obj.object_name}/{local_filename}")
             client.fget_object(bucket_name, obj.object_name, f"/app/foredit/{local_filename}")
-            logger.debug(green(f"{local_filename} Download realizado com sucesso."))
+            logger.info(f"{local_filename} Download realizado com sucesso.")
             return local_filename
     return None
 
 # Processa o arquivo de áudio e vídeo (edição, conversão e upload para o bucket)
 def process_audio_video(nameProcessedFile, client, bucketSet):
     # Cria diretório para arquivos editados
-    pathDirFilesEdited = "/app/edited/"
+    pathDirFilesEdited = "/app/foredit/"
     create_directory(pathDirFilesEdited)
+
+    #################################
+    # TRANSCRIÇÃO
+    API_TRANSCRIBE_URL = f"http://{os.getenv('API_TRANSCRIBE_URL')}:{os.getenv('API_TRANSCRIBE_PORT')}/asr"
+    API_TRANSCRIBE_TIMEOUT = int(os.getenv('API_TRANSCRIBE_TIMEOUT', 1200))
+    transcription_data = transcribe_audio_whisper(f"{pathDirFilesEdited}{nameProcessedFile}", API_TRANSCRIBE_URL, API_TRANSCRIBE_TIMEOUT)
+    if not transcription_data:
+        logger.error("Erro na transcrição. Processo abortado.")
+        return False
+    transcription_text = transcription_data.get("text", " ".join(segment["text"] for segment in transcription_data.get("segments", [])))
+
+    # Obter categorias do ambiente
+    categories = get_categories_from_env()
+    # Classificar transcrição
+    category = classify_transcription(transcription_text, categories)
+    if not category:
+        logger.warning("Classificação falhou. Categoria não será incluída.")
+        category = "unknown"
+
     #################################
     # ARQUIVO ORIGINAL
     # Caminhos dos arquivos
-    original_file_path = f"/app/foredit/{nameProcessedFile}"
+    original_file_path = f"{pathDirFilesEdited}{nameProcessedFile}"
     original_bucket_path = f"files-without-silence/original-{nameProcessedFile}"
-
     # Faz upload do arquivo original para o bucket
     postFileInBucket(client, bucketSet, original_bucket_path, original_file_path, 'audio/mpeg')
-
     # Publica o arquivo original no RabbitMQ
     original_file_info = {
         "file_format": "mp3",
         "file_name": nameProcessedFile,
         "bucket_path": original_bucket_path,
         "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "file_type": "original"
+        "file_type": "original",
+        "category": category
     }
     publish_to_rabbitmq("01_mp3_to_video", original_file_info)
 
     #################################
     # BLEND MIXER
     # Caminhos dos arquivos
-    original_file_path = f"/app/foredit/{nameProcessedFile}"
     original_bucket_path = f"audios-to-blend-mixer/original-{nameProcessedFile}"
     # Faz upload do arquivo original para o bucket
     postFileInBucket(client, bucketSet, original_bucket_path, original_file_path, 'audio/mpeg')
+    # Publica o arquivo original no RabbitMQ
+    original_file_info = {
+        "file_format": "mp3",
+        "file_name": original_file_path,
+        "bucket_path": original_bucket_path,
+        "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "file_type": "original",
+        "category": category,  # Inclui a categoria
+    }
+    publish_to_rabbitmq("01_audio_to_blend_mixer", original_file_info)
 
     #################################
     # REMOVIDO O SILENCIO
@@ -136,7 +171,7 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
         "--margin", margin,
         "-o", f"{pathDirFilesEdited}WithoutSilence-{nameProcessedFile}"
     ])
-    logger.debug(green(f"Editado: {nameProcessedFile}"))
+    logger.info(f"Editado: {nameProcessedFile}")
 
     clip = mp.AudioFileClip(f"{pathDirFilesEdited}WithoutSilence-{nameProcessedFile}")
     clip.write_audiofile(f"{pathDirFilesEdited}{nameProcessedFile}")
@@ -149,17 +184,18 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
         "file_format": "mp3",
         "file_name": nameProcessedFile,
         "bucket_path": f"files-without-silence/{nameProcessedFile}",
-        "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "category": category
     }
     publish_to_rabbitmq("01_mp3_to_video", file_info)
 
     # Remove os diretórios temporários usados para edição
     shutil.rmtree(pathDirFilesEdited)
-    shutil.rmtree("/app/foredit/")
 
     # Remove o arquivo original do bucket após o processamento
     client.remove_object(bucketSet, f"{nameProcessedFile}")
-    logger.debug(green(f"Arquivo original removido do bucket: {nameProcessedFile}"))
+    logger.info(f"Arquivo original removido do bucket: {nameProcessedFile}")
+    logger.info("...\o/...")
 
 # Loop contínuo para monitorar a pasta no MinIO
 def monitor_and_process():
@@ -167,7 +203,7 @@ def monitor_and_process():
 
     bucketSet = "autoeditor"
     client = initialize_minio_client()
-    logger.debug(green(f'Monitorando bucket {bucketSet} - {datetime.now()}'))
+    logger.info(f'Monitorando bucket: {bucketSet} \o/')
 
     while True:
         try:
@@ -176,7 +212,7 @@ def monitor_and_process():
                 process_audio_video(nameProcessedFile, client, bucketSet)
             
         except S3Error as exc:
-            logger.debug(green("Erro ocorrido: ", exc))
+            logger.info("Erro ocorrido: ", exc)
         time.sleep(TIME_SLEEP)  # Aguarda 3 segundos antes de verificar novamente
 
 if __name__ == "__main__":
