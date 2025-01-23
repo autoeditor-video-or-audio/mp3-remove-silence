@@ -119,24 +119,6 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     publish_to_rabbitmq("01_mp3_to_video", original_file_info)
 
     #################################
-    # BLEND MIXER
-    # Caminhos dos arquivos
-    original_file_path = f"/app/foredit/{nameProcessedFile}"
-    original_bucket_path = f"audios-to-blend-mixer/original-{nameProcessedFile}"
-    # Faz upload do arquivo original para o bucket
-    postFileInBucket(client, bucketSet, original_bucket_path, original_file_path, 'audio/mpeg')
-
-    # Publica o arquivo original no RabbitMQ
-    original_file_info = {
-        "file_format": "mp3",
-        "file_name": nameProcessedFile,
-        "bucket_path": original_bucket_path,
-        "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "file_type": "original"
-    }
-    publish_to_rabbitmq("01_audio_to_blend_mixer", original_file_info)
-
-    #################################
     # REMOVIDO O SILENCIO
     # Edita o vídeo para remover silêncios
     margin = os.getenv("AUTO_EDITOR_MARGIN", "0.04sec")
