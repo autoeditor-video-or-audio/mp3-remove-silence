@@ -147,7 +147,7 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     #################################
     # BLEND MIXER
     # Caminhos dos arquivos
-    original_bucket_path = f"audios-to-blend-mixer/original-{nameProcessedFile}"
+    original_bucket_path = f"audios-to-blend-mixer/{nameProcessedFile}"
     # Faz upload do arquivo original para o bucket
     postFileInBucket(client, bucketSet, original_bucket_path, original_file_path, 'audio/mpeg')
     # Publica o arquivo original no RabbitMQ
