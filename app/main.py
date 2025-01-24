@@ -136,7 +136,7 @@ def process_audio_video(nameProcessedFile, client, bucketSet):
     # Publica o arquivo original no RabbitMQ
     original_file_info = {
         "file_format": "mp3",
-        "file_name": nameProcessedFile,
+        "file_name": f"original-{nameProcessedFile}",
         "bucket_path": original_bucket_path,
         "process_start_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "file_type": "original",
