@@ -4,7 +4,7 @@ core: autoeditor
 version: 1.0.16
 
 deployment:
-  replicas: 1
+  replicas: 0
   sendlogs: "true"
   env:
     - name: "TZ"
