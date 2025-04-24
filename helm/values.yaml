@@ -67,9 +67,6 @@ deployment:
     - exec: "python"
     - exec: "main.py"
   resources:
-    requests:
-      memory: "128Mi"
-      cpu: "500m"
     limits:
       memory: "6Gi"
       cpu: "6.0"
