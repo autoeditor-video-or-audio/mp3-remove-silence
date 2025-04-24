@@ -71,8 +71,8 @@ deployment:
       memory: "128Mi"
       cpu: "500m"
     limits:
-      memory: "8Gi"
-      cpu: "4.0"
+      memory: "6Gi"
+      cpu: "6.0"
   affinity:
     hosts:
       - name: k8s-03
