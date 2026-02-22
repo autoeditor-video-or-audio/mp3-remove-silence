@@ -1,2 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+venv/
+.venv/
+env/
+.env
+
+# Workdir (runtime temp files)
+workdir/
+
+# Misc
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 local-readme.md
-__pycache__
