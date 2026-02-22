@@ -15,69 +15,78 @@ AUDIO_SAMPLE_RATE = "48000"
 def remove_silence(input_path: str, output_mp3_path: str, margin: str = None) -> None:
     """Run auto-editor to remove silence, outputting MP3 at 320kbps/48kHz.
 
-    Two-step pipeline for all input formats:
-      1. auto-editor removes silence, outputting WAV (lossless intermediate)
-      2. ffmpeg encodes the WAV to MP3 at 320kbps/48kHz (single lossy encode)
-
-    This avoids an auto-editor 29.x bug where it ignores the -b:a flag
-    (producing 64kbps instead of 320kbps) and cannot convert between formats
-    (e.g. WAV to MP3 fails with 'Could not open encoder unknown').
+    auto-editor 29.x cannot convert between audio formats (e.g. WAV to MP3),
+    failing with 'Could not open encoder unknown'. For non-MP3 inputs, we
+    pre-convert to MP3 via ffmpeg, then let auto-editor process MP3-to-MP3
+    as normal. At 320kbps the quality loss is imperceptible for speech.
     """
     margin = margin or AUTO_EDITOR_MARGIN
-    wav_temp = input_path + ".silence_removed.wav"
+    converted_path = None
+    ext = os.path.splitext(input_path)[1].lower()
 
-    # Step 1: auto-editor removes silence -> WAV (lossless)
-    ae_result = subprocess.run(
-        [
-            "auto-editor",
-            input_path,
-            "--margin", margin,
-            "-o", wav_temp,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=PROCESS_TIMEOUT_SECONDS,
-    )
+    if ext != ".mp3":
+        converted_path = input_path + ".converted.mp3"
+        logger.info("Converting %s to MP3 before processing", ext)
+        _ffmpeg_encode(input_path, converted_path)
+        ae_input = converted_path
+    else:
+        ae_input = input_path
 
-    if ae_result.returncode != 0:
-        logger.error(
-            "auto-editor failed (rc=%d): stdout=%s stderr=%s",
-            ae_result.returncode, ae_result.stdout, ae_result.stderr,
-        )
-        _remove_if_exists(wav_temp)
-        raise RuntimeError(
-            f"auto-editor exited with code {ae_result.returncode}: {ae_result.stderr}"
-        )
-
-    logger.info("auto-editor silence removal done: %s", wav_temp)
-
-    # Step 2: ffmpeg encodes WAV -> MP3 at 320kbps/48kHz
     try:
-        ffmpeg_result = subprocess.run(
+        result = subprocess.run(
             [
-                "ffmpeg", "-y",
-                "-i", wav_temp,
-                "-codec:a", AUDIO_CODEC,
+                "auto-editor",
+                ae_input,
+                "--margin", margin,
+                "-c:a", AUDIO_CODEC,
                 "-b:a", AUDIO_BITRATE,
                 "-ar", AUDIO_SAMPLE_RATE,
-                output_mp3_path,
+                "-o", output_mp3_path,
             ],
             capture_output=True,
             text=True,
             timeout=PROCESS_TIMEOUT_SECONDS,
         )
 
-        if ffmpeg_result.returncode != 0:
+        if result.returncode != 0:
+            logger.error(
+                "auto-editor failed (rc=%d): stdout=%s stderr=%s",
+                result.returncode, result.stdout, result.stderr,
+            )
             raise RuntimeError(
-                f"ffmpeg encoding failed (rc={ffmpeg_result.returncode}): {ffmpeg_result.stderr}"
+                f"auto-editor exited with code {result.returncode}: {result.stderr}"
             )
 
-        logger.info("MP3 encoding done: %s (320kbps, 48kHz)", output_mp3_path)
+        logger.info("auto-editor finished: %s", output_mp3_path)
     finally:
-        _remove_if_exists(wav_temp)
+        _remove_if_exists(converted_path)
+
+
+def _ffmpeg_encode(input_path: str, output_path: str) -> None:
+    """Encode audio to MP3 at 320kbps/48kHz using ffmpeg."""
+    result = subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-i", input_path,
+            "-codec:a", AUDIO_CODEC,
+            "-b:a", AUDIO_BITRATE,
+            "-ar", AUDIO_SAMPLE_RATE,
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=PROCESS_TIMEOUT_SECONDS,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"ffmpeg encoding failed (rc={result.returncode}): {result.stderr}"
+        )
+    logger.info("Encoded %s -> %s", input_path, output_path)
 
 
 def _remove_if_exists(path: str) -> None:
+    if path is None:
+        return
     try:
         if os.path.exists(path):
             os.remove(path)
