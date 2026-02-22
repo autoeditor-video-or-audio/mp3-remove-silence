@@ -1,0 +1,25 @@
+FROM python:3.12-trixie
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt auto-editor
+
+# Pre-download auto-editor binary via GitHub API
+RUN AE_VERSION=$(pip show auto-editor | grep Version | cut -d' ' -f2) \
+    && AE_BIN_DIR=$(python -c "import auto_editor, pathlib; print(pathlib.Path(auto_editor.__file__).parent / 'bin')") \
+    && mkdir -p "$AE_BIN_DIR" \
+    && curl -sL -H "Accept: application/octet-stream" \
+       $(curl -s "https://api.github.com/repos/WyattBlue/auto-editor/releases/tags/${AE_VERSION}" \
+         | python -c "import json,sys; print([a['url'] for a in json.load(sys.stdin)['assets'] if 'linux-x86_64' in a['name']][0])") \
+       -o "${AE_BIN_DIR}/auto-editor" \
+    && chmod +x "${AE_BIN_DIR}/auto-editor" \
+    && auto-editor --version
+
+COPY . .
+RUN mkdir -p audiocast
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
