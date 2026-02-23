@@ -1,0 +1,71 @@
+name: Build and Publish
+
+on:
+  workflow_run:
+    workflows: ["Semantic Release"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Resolve release tag
+        shell: bash
+        run: |
+          git fetch --tags --force
+          VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "")
+          if [ -z "$VERSION" ]; then
+            echo "::error::No release tag found. Run Semantic Release first to create a version tag."
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mp3-remove-silence:latest
+            ghcr.io/${{ github.repository_owner }}/mp3-remove-silence:${{ env.VERSION }}
+
+      - name: Update helm values.yaml with new version
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/mp3-remove-silence:${{ env.VERSION }}"
+          if [ -f helm/values.yaml ]; then
+            sed -i "s|version: .*|version: ${{ env.VERSION }}|" helm/values.yaml
+            sed -i "s|image: ghcr.io/.*/mp3-remove-silence:.*|image: $IMAGE|" helm/values.yaml
+          fi
+
+      - name: Commit and push version updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm/values.yaml 2>/dev/null || true
+          if git diff --staged --quiet 2>/dev/null; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update helm to ${{ env.VERSION }} [skip ci]"
+            git push origin main
+          fi
