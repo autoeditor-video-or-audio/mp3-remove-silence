@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.1...v1.0.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* **helm:** corrigir affinity para OR logic (k8s-03 ou k8s-04) ([2bcdb93](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/2bcdb9390785015b5f4e0889c7ae882936cd7e80))
+
 ## [1.0.1](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.0...v1.0.1) (2026-02-28)
 
 
