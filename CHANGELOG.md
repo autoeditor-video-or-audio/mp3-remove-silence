@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.2...v1.0.3) (2026-02-28)
+
+
+### Bug Fixes
+
+* adicionar CMD para iniciar servidor uvicorn ([60ceb64](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/60ceb64112c87403984ec73f5b5fa2946a4b73ff))
+
 ## [1.0.2](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.1...v1.0.2) (2026-02-28)
 
 
