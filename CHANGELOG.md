@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.3...v1.1.0) (2026-02-28)
+
+
+### Features
+
+* adicionar imagePullSecrets para GHCR privado ([f8d6d2f](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/f8d6d2f3d5fafc60eba79f2e7b0408f50b49e504))
+
 ## [1.0.3](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.2...v1.0.3) (2026-02-28)
 
 
