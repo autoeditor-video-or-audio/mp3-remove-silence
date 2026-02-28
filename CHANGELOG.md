@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.2...v1.1.3) (2026-02-28)
+
+
+### Bug Fixes
+
+* atualizar base para python:3.12-slim (GLIBC 2.36) ([1726a55](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/1726a55464ebbb4ab28faa793360a05229ab84d5))
+
 ## [1.1.2](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.1...v1.1.2) (2026-02-28)
 
 
