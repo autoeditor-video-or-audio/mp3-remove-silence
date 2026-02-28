@@ -10,7 +10,7 @@ deployment:
   containers:
     - name: mp3-remove-silence
       fixedNameImage: true
-      image: ghcr.io/autoeditor-video-or-audio/mp3-remove-silence:v0.1.0
+      image: ghcr.io/autoeditor-video-or-audio/mp3-remove-silence:v1.0.0
       ports:
         number: 8001
         name: http
