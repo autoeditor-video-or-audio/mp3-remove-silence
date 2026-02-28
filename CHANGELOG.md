@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.0...v1.1.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* corrigir COPY no Dockerfile para manter package app ([0cbbe79](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/0cbbe797f7ace42ec6a971026236b8ef52feb0f7))
+
 # [1.1.0](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.3...v1.1.0) (2026-02-28)
 
 
