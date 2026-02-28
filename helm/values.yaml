@@ -45,10 +45,8 @@ deployment:
         periodSeconds: 10
         timeoutSeconds: 5
   affinity:
-    - hosts:
-      - name: k8s-03
-    - hosts:
-      - name: k8s-04
+    - kubernetes.io/hostname: k8s-03
+    - kubernetes.io/hostname: k8s-04
 
 service:
   - type: ClusterIP
