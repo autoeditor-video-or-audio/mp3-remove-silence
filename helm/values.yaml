@@ -2,7 +2,7 @@
 # Usado com: valueFiles: - '$definitions/helm/values.yaml'
 app: mp3-remove-silence
 component: editaudiotomovie
-version: v1.1.2
+version: v1.1.3
 
 deployment:
   replicas: 1
@@ -12,7 +12,7 @@ deployment:
   containers:
     - name: mp3-remove-silence
       fixedNameImage: true
-      image: ghcr.io/autoeditor-video-or-audio/mp3-remove-silence:v1.1.2
+      image: ghcr.io/autoeditor-video-or-audio/mp3-remove-silence:v1.1.3
       ports:
         number: 8001
         name: http
