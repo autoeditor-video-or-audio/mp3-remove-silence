@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.0.0...v1.0.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* update affinity configuration in helm values.yaml to use correct Kubernetes hostname format ([c44f8d0](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/c44f8d0189af54989456feb212b7343650502615))
+
 # 1.0.0 (2026-02-23)
 
 
