@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.1...v1.1.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* adicionar auto-editor nos requirements.txt ([a633013](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/a6330138c1857629d152e9a6a575c64c423c6e4b))
+
 ## [1.1.1](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.0...v1.1.1) (2026-02-28)
 
 
