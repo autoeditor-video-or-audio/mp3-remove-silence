@@ -14,8 +14,6 @@ WORKDIR /app
 
 COPY ./app/ .
 
-# ENTRYPOINT ["bash"]
-# ENTRYPOINT ["python3", "run.py"]
+EXPOSE 8001
 
-# docker build -t mrs .
-# docker rm -f pod && docker run -ti --name pod -v ./app:/app/ --env-file env.list mrs bash
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
