@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.3...v1.1.4) (2026-05-04)
+
+
+### Bug Fixes
+
+* fall back when auto-editor finds empty timeline ([5d095cf](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/commit/5d095cfc446d00b612f20ceefe8f846c3686facc))
+
 ## [1.1.3](https://github.com/autoeditor-video-or-audio/mp3-remove-silence/compare/v1.1.2...v1.1.3) (2026-02-28)
 
 
