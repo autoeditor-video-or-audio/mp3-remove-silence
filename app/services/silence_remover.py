@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import subprocess
 
 from app.config import AUTO_EDITOR_MARGIN, PROCESS_TIMEOUT_SECONDS
@@ -49,6 +50,14 @@ def remove_silence(input_path: str, output_mp3_path: str, margin: str = None) ->
         )
 
         if result.returncode != 0:
+            if _is_empty_timeline_error(result.stderr):
+                logger.warning(
+                    "auto-editor found no editable timeline; falling back to original audio: %s",
+                    ae_input,
+                )
+                shutil.copyfile(ae_input, output_mp3_path)
+                return
+
             logger.error(
                 "auto-editor failed (rc=%d): stdout=%s stderr=%s",
                 result.returncode, result.stdout, result.stderr,
@@ -92,3 +101,8 @@ def _remove_if_exists(path: str) -> None:
             os.remove(path)
     except OSError:
         pass
+
+
+def _is_empty_timeline_error(stderr: str) -> bool:
+    normalized = (stderr or "").lower()
+    return "timeline is empty" in normalized and "nothing to do" in normalized
