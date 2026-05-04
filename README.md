@@ -267,6 +267,6 @@ Both must be available on the system PATH for the service to function correctly.
 
 ---
 
-## License
+## Licenca
 
-Private project -- All rights reserved.
+Projeto privado -- Todos os direitos reservados.
