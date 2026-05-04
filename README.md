@@ -10,6 +10,7 @@ The **MP3 Remove Silence** service is a single-purpose microservice in the Edit 
 
 - **Silence detection and removal** via auto-editor's audio analysis
 - **Configurable margin** -- control how aggressively silence is trimmed
+- **Input normalization** -- non-MP3 files are pre-converted before auto-editor runs
 - **High-quality output** -- MP3 encoded at 320kbps, 48kHz using libmp3lame
 - **Health validation** -- verifies that the auto-editor binary is available at startup
 
@@ -114,10 +115,11 @@ curl -X POST http://localhost:8001/api/v1/audio/remove-silence \
 1. Client sends audio file as multipart form data
 2. Service saves the file to `WORK_DIR` with a unique filename
 3. `auto-editor` CLI is invoked with the configured margin parameter
-4. auto-editor analyzes audio levels, identifies silence segments, and removes them
-5. The processed file is encoded as MP3 (libmp3lame, 320kbps, 48kHz)
-6. Service reads the output file and returns it as a binary HTTP response
-7. Temporary files in `WORK_DIR` are cleaned up
+4. If input is not MP3, ffmpeg first converts it to MP3 because auto-editor 29.x is unreliable for direct non-MP3 to MP3 conversion
+5. auto-editor analyzes audio levels, identifies silence segments, and removes them
+6. The processed file is encoded as MP3 (libmp3lame, 320kbps, 48kHz)
+7. Service reads the output file and returns it as a binary HTTP response
+8. Temporary files in `WORK_DIR` are cleaned up
 
 ---
 
@@ -158,7 +160,7 @@ Content-Type: audio/mpeg
 Body: <binary audio data>
 ```
 
-The `margin` parameter controls the silence detection threshold. Lower values remove more silence; higher values preserve more of the original audio around speech boundaries.
+The `margin` parameter controls how much surrounding audio is preserved around detected speech boundaries. Lower values trim more aggressively; higher values keep more natural pauses.
 
 ### Output Specification
 
@@ -204,19 +206,18 @@ The margin controls how much silence auto-editor preserves around detected speec
 ```
 mp3-remove-silence/
 ├── app/
-│   ├── api/
-│   │   └── routes/
-│   │       ├── audio.py              # Silence removal endpoint
-│   │       └── health.py             # Health check with binary validation
-│   ├── core/
-│   │   └── config.py                 # Settings from environment variables
+│   ├── config.py                     # Settings from environment variables
+│   ├── logger_config.py             # Logging configuration
+│   ├── main.py                       # FastAPI application entry point
 │   ├── services/
 │   │   └── silence_remover.py        # auto-editor CLI wrapper
 │   ├── utils/
-│   │   ├── binary_check.py           # Verify auto-editor binary exists
-│   │   └── logging.py                # Logging configuration
-│   └── main.py                       # FastAPI application entry point
+│   │   └── file_utils.py             # Directory and file helpers
+│   └── __init__.py
 ├── Dockerfile
+├── Dockerfile.dev
+├── docker-compose.yml
+├── helm/values.yaml
 ├── requirements.txt
 └── README.md
 ```
